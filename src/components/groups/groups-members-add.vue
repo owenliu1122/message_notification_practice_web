@@ -43,6 +43,20 @@
           </el-table-column>
 
         </el-table>
+
+        <div class="block" >
+          <span class="demonstration"></span>
+          <el-pagination
+            @size-change="handleSizeChange"
+            @current-change="handlePageChange"
+            :current-page="currentPage"
+            :page-sizes="pageSizes"
+            :page-size="pageSize"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="count">
+          </el-pagination>
+        </div>
+
       </el-main>
     </el-container>
   </el-container>
@@ -71,7 +85,11 @@ export default {
       load: false,
       groupInfo: {},
       tableData: [],
-      searchName: ''
+      searchName: '',
+      currentPage: 1,
+      count: 0,
+      pageSize: 50,
+      pageSizes: [50, 100, 150, 200]
     }
   },
 
@@ -79,14 +97,39 @@ export default {
     this.groupInfo = this.$route.query.row
 
     this.load = true
-    this.func.ajaxGet('/apis/dashboard/group_user_relations/available_members', {group_id: this.groupInfo.id, user_name: this.searchName}, res => {
+    this.func.ajaxGet('/apis/dashboard/group_user_relations/available_members', {group_id: this.groupInfo.id, user_name: this.searchName, page: this.currentPage, page_size: this.pageSize}, res => {
       console.log(res.data)
-      this.tableData = res.data
+      this.count = res.data.count
+      this.tableData = res.data.data
       this.load = false
     })
   },
 
   methods: {
+    handleSizeChange (val) {
+      this.load = true
+      this.pageSize = val
+      console.log(`每页 ${val} 条`)
+      this.func.ajaxGet('/apis/dashboard/group_user_relations/available_members', {group_id: this.groupInfo.id, user_name: this.searchName, page: this.currentPage, page_size: val}, res => {
+        console.log(res.data)
+        this.count = res.data.count
+        this.tableData = res.data.data
+        this.load = false
+      })
+    },
+    handlePageChange (val) {
+      console.log(`当前页: ${val}`)
+      this.load = true
+      this.currentPage = val
+      console.log(`每页 ${val} 条`)
+      this.func.ajaxGet('/apis/dashboard/group_user_relations/available_members', {group_id: this.groupInfo.id, user_name: this.searchName, page: val, page_size: this.pageSize}, res => {
+        console.log(res.data)
+        this.count = res.data.count
+        this.tableData = res.data.data
+        this.load = false
+      })
+    },
+
     // 返回
     handleCancel () {
       this.$router.push({path: '/groups-members', query: {row: this.groupInfo}})
@@ -94,11 +137,15 @@ export default {
 
     handleSearch () {
       this.load = true
-      this.func.ajaxGet('/apis/dashboard/group_user_relations/available_members', {group_id: this.groupInfo.id, user_name: this.searchName}, res => {
-        console.log(res.data)
-        this.tableData = res.data
-        this.load = false
-      })
+      this.func.ajaxGet('/apis/dashboard/group_user_relations/available_members',
+        {group_id: this.groupInfo.id,
+          user_name: this.searchName,
+          page: this.currentPage,
+          page_size: this.pageSize}, res => {
+          console.log(res.data)
+          this.tableData = res.data
+          this.load = false
+        })
     },
     // 删除
     handleAdd (row) {

@@ -43,6 +43,20 @@
           </el-table-column>
 
         </el-table>
+
+        <div class="block" >
+          <span class="demonstration"></span>
+          <el-pagination
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+            :current-page="currentPage"
+            :page-sizes="pageSizes"
+            :page-size="pageSize"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="count">
+          </el-pagination>
+        </div>
+
       </el-main>
     </el-container>
   </el-container>
@@ -67,20 +81,49 @@ export default {
   data () {
     return {
       load: false,
-      tableData: []
+      tableData: [],
+      currentPage: 1,
+      count: 0,
+      pageSize: 50,
+      pageSizes: [50, 100, 150, 200]
     }
   },
 
   created () {
     this.load = true
-    this.func.ajaxGet('/apis/dashboard/users', {}, res => {
+    this.func.ajaxGet('/apis/dashboard/users', {page: this.currentPage, page_size: this.pageSize}, res => {
       console.log(res.data)
-      this.tableData = res.data
+      this.count = res.data.count
+      this.tableData = res.data.data
       this.load = false
     })
   },
 
   methods: {
+    handleSizeChange (val) {
+      this.load = true
+      this.pageSize = val
+      console.log(`每页 ${val} 条`)
+      this.func.ajaxGet('/apis/dashboard/users', {page: this.currentPage, page_size: val}, res => {
+        console.log(res.data)
+        this.count = res.data.count
+        this.tableData = res.data.data
+        this.load = false
+      })
+    },
+    handleCurrentChange (val) {
+      console.log(`当前页: ${val}`)
+      this.load = true
+      this.currentPage = val
+      console.log(`每页 ${val} 条`)
+      this.func.ajaxGet('/apis/dashboard/users', {page: val, page_size: this.pageSize}, res => {
+        console.log(res.data)
+        this.count = res.data.count
+        this.tableData = res.data.data
+        this.load = false
+      })
+    },
+
     // 新增
     add () {
       this.$router.push('/users-form')
